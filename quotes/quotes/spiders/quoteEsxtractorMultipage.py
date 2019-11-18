@@ -1,16 +1,17 @@
 # -*- coding: utf-8 -*-
 
-import string
+# import string
 import scrapy
-from scrapy import Request
+# from scrapy import Request
 
 class QuoteesxtractorSpider(scrapy.Spider):
-    name = 'quoteEsxtractor'
+    name = 'quoteExe'
     allowed_domains = ['quotes.toscrape.com']
     start_urls = ['http://quotes.toscrape.com/']
+    page_number = 2
 
-    def parse_page(self, response):
-        for quote in response.css('.quote') :
+    def parse(self, response):
+        for quote in response.css('.quote'):
             # print(quote.getall())
             result = {
                 "text": quote.css('span.text::text').get(),
@@ -18,6 +19,8 @@ class QuoteesxtractorSpider(scrapy.Spider):
                 "tags": quote.css('div.tags a.tag::text').getall()
             }
             yield result
-        next_urls = response.xpath("//ul[@class='pager']//li[@class='next']//a/@href").extract()
-        for next_url in next_urls :
-            yield Request(response.urljoin(next_url), callback=self.parse_page())
+
+        next_page = 'http://quotes.toscrape.com/page/' + str(QuoteesxtractorSpider.page_number) + '/'
+        if QuoteesxtractorSpider.page_number <= 1000:
+            QuoteesxtractorSpider.page_number += 1
+            yield response.follow(next_page, callback=self.parse)
